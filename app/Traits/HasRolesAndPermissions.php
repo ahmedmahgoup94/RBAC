@@ -49,7 +49,7 @@ trait HasRolesAndPermissions
      */
     protected function hasPermission($permission)
     {
-        return (bool) $this->permissions->where('slug', $permission->slug)->count();
+        return (bool) $this->permissions->where('slug', $permission)->count();
     }
 
     /**
@@ -57,7 +57,7 @@ trait HasRolesAndPermissions
      *
      * @return bool
      */
-    protected function hasPermissionTo($permission)
+    public function hasPermissionTo($permission)
     {
         return $this->hasPermissionThroughRole($permission) || $this->hasPermission($permission);
     }
@@ -67,11 +67,15 @@ trait HasRolesAndPermissions
      *
      * @return bool
      */
-    public function hasPermissionThroughRole($permission)
+    protected function hasPermissionThroughRole($permission)
     {
-        foreach ($permission->roles as $role) {
-            if ($this->roles->contains($role)) {
-                return true;
+        $permission = $this->permissions->where('slug', $permission)->first();
+
+        if($permission && $permission->roles){
+            foreach ($permission->roles as $role) {
+                if ($this->roles->contains($role)) {
+                    return true;
+                }
             }
         }
         return false;
@@ -99,7 +103,7 @@ trait HasRolesAndPermissions
             return $this;
         }
 
-        $this->permissions->saveMany($permissions);
+        $this->permissions()->saveMany($permissions);
         return $this;
     }
 
@@ -111,7 +115,7 @@ trait HasRolesAndPermissions
     public function deletePermissionTo(...$permissions)
     {
         $permissions = $this->getAllPermissions($permissions);
-        $this->permissions->detach($permissions);
+        $this->permissions()->detach($permissions);
         return $this;
     }
 
@@ -122,7 +126,7 @@ trait HasRolesAndPermissions
      */
     public function refreshPermission(...$permissions)
     {
-        $this->permissions->detach();
+        $this->permissions()->detach();
         return $this->givePermissionTo($permissions);
     }
 }
